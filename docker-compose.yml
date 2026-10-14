@@ -1,0 +1,23 @@
+services:
+  api:
+    build: .
+    env_file: .env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # Dev-only: exposes the local api over a public HTTPS URL so BambooHR can
+  # reach it. Quick tunnels get a NEW random *.trycloudflare.com hostname on
+  # every restart, and the webhook URL is registered server-side at BambooHR
+  # -- so for anything beyond a one-off test, create a named tunnel and set
+  # TUNNEL_TOKEN instead.
+  #
+  #   docker compose --profile tunnel up
+  #   docker compose logs tunnel   # the URL is printed here
+  tunnel:
+    image: cloudflare/cloudflared:2024.12.2
+    profiles: ["tunnel"]
+    command: tunnel --no-autoupdate --url http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
